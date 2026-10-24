@@ -1,0 +1,482 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Project 34: Customer Behavioral Segmentation</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Rancangan project portofolio Data Analyst: segmentasi pelanggan dari perilaku belanja (RFM, kategori produk, waktu, cara bayar) dari dataset publik Olist dengan SQL, K-Means, dan dashboard.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: tema terang ala Google (single theme, sengaja): latar putih keabuan, kartu putih;
+   biru = struktur, kuning = penanda utama, hijau = info pendukung, merah = aksen.
+   Skala huruf: H1 32 · H2 25 · H3 19 · body 16.5 · keterangan 14 · label 12.5 */
+:root{color-scheme:light;
+--bg:#F8F9FA;--card:#FFFFFF;--sub:#F1F3F4;--line:#DADCE0;
+--ink:#202124;--head:#174EA6;--mut:#5F6368;
+--navy:#1A73E8;--navy-ink:#FFFFFF;--teal:#188038;--amber:#FBBC04;--amber-ink:#3C2A00;--bar:#1A73E8;--soft:#E8F0FE;
+--gb:#4285F4;--gr:#EA4335;--gy:#FBBC04;--gg:#34A853;
+--navyH:#1A73E8;--amberH:#B06000;--tealH:#188038;--plumH:#9334E6;--roseH:#D93025;--skyH:#1967D2;--onph:#fff;
+--f:"Source Sans 3",Calibri,Carlito,"Segoe UI",Arial,sans-serif;
+--h1:clamp(26px,2.6vw,32px);--h2:clamp(21px,2vw,25px);--h3:19px;--body:16.5px;--small:14px;--label:12.5px}
+[hidden]{display:none!important}
+*{box-sizing:border-box}html{scroll-padding-top:64px;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--body)/1.6 var(--f)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+main{max-width:880px;margin:0 auto;padding-block:16px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+b,strong{font-weight:700}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);padding:8px 0;display:flex;gap:6px;overflow-x:auto}
+nav a{flex:none;background:var(--card);border:1px solid var(--line);color:var(--ink);text-decoration:none;border-radius:999px;padding:6px 14px;font-size:var(--small);font-weight:600}
+nav a:hover,nav a:focus-visible{background:var(--amber);border-color:var(--amber);color:var(--amber-ink);outline:none}
+.banner{background:var(--navy);color:var(--navy-ink);border-radius:18px;padding:22px 26px}
+.banner h1{margin:0 0 8px;font-size:var(--h1);font-weight:800;line-height:1.2;text-wrap:balance;letter-spacing:-.01em}.banner p{margin:0;font-size:18px;line-height:1.55;opacity:.97}.banner .goal b{font-weight:800}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
+.tags{align-items:center}.tlab{font-size:var(--small);font-weight:700;margin-right:4px;opacity:.95}
+.tag{border-radius:999px;padding:3px 12px;font-size:var(--label);font-weight:700;background:rgba(255,255,255,.2);letter-spacing:.02em}.tag.a{background:var(--amber);color:var(--amber-ink)}
+.card{border-radius:16px;padding:16px 20px;background:var(--card);border:1px solid var(--line);margin:12px 0}
+.card p{margin:8px 0}
+h2{font-size:var(--h2);font-weight:800;color:var(--head);margin:48px 0 10px;padding-bottom:8px;border-bottom:2px solid var(--line);line-height:1.25;text-wrap:balance}
+h2 small{display:block;font-size:var(--small);font-weight:400;color:var(--mut);margin-top:4px}
+h3{font-size:var(--h3);font-weight:700;color:var(--head);margin:16px 0 6px;line-height:1.3}
+.card h3:first-child,.card>div>h3:first-child{margin-top:4px}
+.add{display:inline-block;vertical-align:middle;margin-left:8px;border-radius:999px;padding:2px 10px;font-size:var(--label);font-weight:700;background:var(--teal);color:#fff}
+.how{background:var(--soft);border-radius:12px;padding:12px 16px;margin:10px 0;font-size:var(--small);line-height:1.55;color:var(--ink)}.how::before{content:"Cara membaca ";font-weight:700;color:var(--teal)}
+.callout{border-radius:14px;padding:14px 20px;margin:12px 0;font-size:16px}.callout h4{margin:0 0 6px;font-size:var(--h3);font-weight:700}.callout p{margin:6px 0}
+.callout.a{background:var(--amber);color:var(--amber-ink)}.callout.g{background:var(--teal);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}.kpis .card{margin:0}
+.kpi .v{font-size:30px;font-weight:800;display:block;line-height:1.15;color:var(--head);font-variant-numeric:tabular-nums}.kpi .l{display:block;font-weight:700;font-size:16px;margin-top:2px}.kpi .d{display:block;font-size:var(--small);line-height:1.4;margin-top:6px;color:var(--mut)}
+.kpi.t{background:var(--teal);border-color:var(--teal);color:#fff}.kpi.am{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}
+.kpi.t .v,.kpi.t .d,.kpi.am .v,.kpi.am .d{color:inherit}
+table{border-collapse:collapse;width:100%;font-size:15px;background:var(--card);border-radius:12px;overflow:hidden}
+th{background:var(--navy);color:var(--navy-ink);padding:9px 12px;text-align:left;vertical-align:top;font-weight:700}
+td{padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:nth-child(odd) td{background:var(--sub)}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin:10px 0}
+.q{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:6px 0;display:grid;grid-template-columns:40px 1fr;gap:4px 8px;font-size:16px;line-height:1.45}
+.q .id{font-weight:800;color:var(--head)}.q .m{grid-column:2;font-size:var(--small);color:var(--mut)}
+.pri{display:inline-block;border-radius:999px;padding:1px 9px;font-size:var(--label);font-weight:700;margin-left:6px;background:var(--sub);border:1px solid var(--line);color:var(--mut)}.pri.M{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}.pri.S{background:var(--navy);border-color:var(--navy);color:#fff}
+.theme{font-size:var(--label);font-weight:700;color:var(--teal);margin:20px 0 4px;text-transform:uppercase;letter-spacing:.08em}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0}
+.flow span{border-radius:999px;padding:5px 12px;font-size:var(--small);font-weight:700;background:var(--sub);border:1px solid var(--line)}
+.flow span.ng{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}.flow span.ok{background:var(--teal);border-color:var(--teal);color:#fff}.flow i{font-style:normal;color:var(--mut);font-size:var(--small)}
+.row{display:flex;align-items:center;gap:8px;margin:6px 0;width:100%;font:inherit;font-size:var(--small);color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.row .n{width:96px;flex:none;font-weight:600}.row .tr{flex:1;background:var(--sub);border-radius:8px;height:24px;position:relative;overflow:hidden}
+.row .b{position:absolute;left:0;top:0;bottom:0;border-radius:8px;background:var(--bar);transition:width .25s}
+.row.sel .b{background:var(--amber)}.row.sel .n{color:var(--head);font-weight:800}
+.row .c{width:58px;text-align:right;flex:none;font-variant-numeric:tabular-nums;font-weight:600}
+.row:focus-visible{outline:3px solid var(--amber);outline-offset:2px;border-radius:8px}
+.ctl{display:flex;align-items:center;gap:12px;margin:14px 0 10px;font-weight:700;font-size:15px}.ctl input{flex:1;accent-color:#F2A541}.ctl output{min-width:48px;text-align:right}
+.res{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.res div{background:var(--sub);border-radius:12px;padding:10px 14px;font-size:var(--small);color:var(--mut)}.res b{display:block;font-size:24px;font-weight:800;color:var(--head);font-variant-numeric:tabular-nums}
+.steps{counter-reset:s;display:grid;gap:8px;margin:10px 0;padding:0;list-style:none}
+.steps li{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px 12px 54px;position:relative}
+.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:14px;top:12px;width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;font-weight:700;display:grid;place-items:center;font-size:14px}
+.steps li.L::before{background:var(--amber);color:var(--amber-ink)}
+.steps b.t{display:block;font-size:17px;color:var(--head);line-height:1.3}.steps p{margin:6px 0;font-size:15px;line-height:1.5}.steps .meta{font-size:13px;color:var(--mut)}
+.phase{font-size:var(--label);font-weight:700;color:var(--teal);margin:18px 0 0;text-transform:uppercase;letter-spacing:.08em}
+.tools{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:12px 0}.tools .card{margin:0}
+.tools b{display:block;font-size:var(--h3);color:var(--head)}.tools .r{font-size:15px;margin:6px 0 0}.tools .alt{font-size:var(--small);color:var(--mut);margin:8px 0 0;padding-top:8px;border-top:1px dashed var(--line)}
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:8px 0}summary{cursor:pointer;font-weight:700;font-size:17px;color:var(--head)}details p{font-size:15.5px}
+.pill{border-radius:999px;padding:1px 9px;font-size:var(--label);font-weight:700;background:var(--teal);color:#fff;margin-left:4px}.pill.d{background:var(--sub);border:1px solid var(--line);color:var(--mut)}
+.chip{display:inline-block;border-radius:999px;padding:3px 11px;margin:3px 4px 3px 0;font-size:var(--small);font-weight:600;background:var(--sub);border:1px solid var(--line)}
+.tm{border-bottom:2px dotted var(--amber);background:rgba(242,165,65,.16);border-radius:4px;padding:0 2px;cursor:help}
+#tip{position:fixed;display:none;max-width:320px;white-space:pre-line;background:#202124;color:#fff;padding:10px 12px;border-radius:12px;font-size:var(--small);line-height:1.4;z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+ul.tight{margin:6px 0;padding-left:20px}ul.tight li{margin:5px 0}
+.intro>.layout{grid-column:1/-1}
+.layout{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}.layout .lead{margin:4px 0 10px;max-width:90ch}
+.figw{overflow-x:auto;margin:8px 0}.figw svg{display:block;width:100%;min-width:860px;height:auto;font-family:var(--f)}
+.figw .lane{fill:var(--sub)}.figw .box{fill:var(--card);stroke:var(--line);stroke-width:1.5}.figw .box.hi{stroke:var(--bar);stroke-width:2.5}
+.figw text{fill:var(--ink)}.figw .ln{font-size:15px;font-weight:700;fill:var(--head)}.figw .gl{font-size:13px;font-weight:700;fill:var(--teal);letter-spacing:.03em}
+.figw .bt{font-size:13px}.figw .b{font-size:15px;font-weight:700}.figw .st{font-size:13px;fill:var(--mut)}
+.figw .grp{stroke:var(--teal);stroke-width:2}.figw .ar{stroke:var(--bar);stroke-width:2}.figw .ah{fill:var(--bar)}
+.figw .ng,.figw .ngs{stroke:var(--amber);stroke-width:2;stroke-dasharray:5 4}.figw .aha{fill:var(--amber)}.figw .nl{font-size:14px;font-weight:700;fill:var(--amberH)}
+.figw .dt{stroke:var(--mut);stroke-width:2;stroke-dasharray:2 4}
+.figw .okb{fill:var(--teal)}.figw .scb{fill:var(--amber)}.figw .wt{fill:#fff;font-size:14px;font-weight:700}.figw .at{fill:var(--amber-ink);font-size:14px;font-weight:700}
+.figw .mk{fill:var(--amber)}.figw .mt{fill:var(--amber-ink);font-size:14px;font-weight:800}
+.legend{counter-reset:l;list-style:none;padding:0;margin:10px 0 0;display:grid;gap:10px}
+.legend li{counter-increment:l;position:relative;padding-left:38px;font-size:15.5px;line-height:1.55}
+.legend li::before{content:counter(l);position:absolute;left:0;top:1px;width:26px;height:26px;border-radius:50%;background:var(--amber);color:var(--amber-ink);font-weight:800;font-size:14px;display:grid;place-items:center}
+@media (min-width:1000px){.legend{grid-template-columns:repeat(4,1fr);gap:16px}}
+.kpi{--h:var(--navyH);background:color-mix(in srgb,var(--h) 11%,var(--card));border-color:color-mix(in srgb,var(--h) 35%,var(--card))}
+.kpi .v{color:var(--h)}.kpi .l{color:var(--ink)}.kpi .d{color:var(--mut)}
+.q[data-p="M"]{background:color-mix(in srgb,var(--amber) 13%,var(--card));border-color:color-mix(in srgb,var(--amber) 60%,var(--card))}
+.q[data-p="S"]{background:color-mix(in srgb,var(--skyH) 9%,var(--card));border-color:color-mix(in srgb,var(--skyH) 35%,var(--card))}
+.q[data-p="N"]{border-style:dashed}
+.q[data-p="M"] .id{color:var(--amberH)}.q[data-p="S"] .id{color:var(--skyH)}.q[data-p="N"] .id{color:var(--mut)}
+.pri.S{background:var(--skyH);border-color:var(--skyH);color:var(--onph)}
+.fbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:12px 0 4px}.fbar span{font-size:var(--small);font-weight:700;color:var(--mut);margin-right:2px}
+.fb{font:inherit;font-size:var(--small);font-weight:700;cursor:pointer;border-radius:999px;padding:6px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.fb i{font-style:normal;opacity:.7;margin-left:4px}.fb:hover{border-color:var(--bar)}.fb:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.fb.on{background:var(--navy);border-color:var(--navy);color:#fff}.fb.on[data-f="M"]{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}.fb.on[data-f="S"]{background:var(--skyH);border-color:var(--skyH);color:var(--onph)}
+.defs p{margin:0 0 12px}.defs p:last-child{margin:0}
+.fx{display:inline-block;margin:2px 0;padding:1px 9px;border-radius:8px;background:color-mix(in srgb,var(--tealH) 12%,var(--card));border:1px solid color-mix(in srgb,var(--tealH) 40%,var(--card));color:var(--tealH);font-weight:700;font-size:15px;white-space:normal}
+.figw.fl svg{min-width:520px;max-width:1000px;margin:0 auto}.flowfull .card{padding:20px 24px}.flowfull .card>p{text-align:center;margin:12px 0 0}.figw .dia{fill:var(--sub);stroke:var(--bar);stroke-width:2}.figw .b2{font-size:14px;font-weight:700}
+.figw .arT{fill:none;stroke:var(--teal);stroke-width:2}.figw .aht{fill:var(--teal)}.figw .arA{fill:none;stroke:var(--amber);stroke-width:2}.figw .aha2{fill:var(--amber)}
+.figw .lt{font-size:13px;font-weight:700;fill:var(--tealH)}.figw .la{font-size:13px;font-weight:700;fill:var(--amberH)}
+.ph .phase{color:var(--ph);font-size:13.5px}
+.ph .steps li{background:color-mix(in srgb,var(--ph) 8%,var(--card));border-color:color-mix(in srgb,var(--ph) 32%,var(--card))}
+.ph .steps li::before,.ph .steps li.L::before{background:var(--ph);color:var(--onph)}
+.ph .steps b.t{color:var(--ink)}
+.steps li.L::after{content:"beban besar";position:absolute;right:12px;top:12px;font-size:11.5px;font-weight:700;letter-spacing:.03em;padding:1px 8px;border-radius:999px;border:1px solid var(--ph,var(--amber));color:var(--ph,var(--amber))}
+.steps li.L b.t{padding-right:84px}
+.banner{background:linear-gradient(120deg,#1A73E8,#4285F4)}
+h2{border-bottom:3px solid transparent;border-image:linear-gradient(90deg,var(--gb) 0 60px,var(--line) 60px) 1}
+nav a:nth-child(4n+1):hover{background:var(--gb);border-color:var(--gb);color:#fff}nav a:nth-child(4n+2):hover{background:var(--gr);border-color:var(--gr);color:#fff}nav a:nth-child(4n+4):hover{background:var(--gg);border-color:var(--gg);color:#fff}
+.callout.g{background:#E6F4EA;color:#0D652D;border:1px solid #A8DAB5}.callout.g h4{color:#137333}
+.callout.a{background:#FEF7E0;color:#3C2A00;border:1px solid #FDD663}
+.outs{display:grid;gap:12px;margin:12px 0}.outs .card{margin:0}
+.out{--h:var(--navyH);border-top:4px solid var(--h)}
+.out .oh{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.out .oh b{font-size:var(--h3);color:var(--h);line-height:1.3}
+.ob{flex:none;border-radius:999px;padding:1px 9px;font-size:var(--label);font-weight:700;background:var(--amber);color:var(--amber-ink)}.ob.opt{background:var(--sub);border:1px solid var(--line);color:var(--mut)}
+.out ul{margin:8px 0 0;padding-left:18px;font-size:15px;line-height:1.5}.out li{margin:4px 0}
+.out li:nth-last-child(-n+2){color:var(--mut);font-size:14px}
+@media (min-width:700px){.outs{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1280px){.outs{grid-template-columns:repeat(4,1fr)}}
+.tag.c1{background:#188038;color:#fff}.tag.c2{background:#9334E6;color:#fff}.tag.c3{background:#D93025;color:#fff}.tag.c4{background:#fff;color:#1A73E8}
+.sample td:first-child{white-space:nowrap}.src{border-top:1px dashed var(--line);padding-top:8px;font-size:15px}.src code{font-size:13.5px;background:var(--soft);padding:1px 6px;border-radius:6px}.note{font-size:13px;color:var(--mut);margin:6px 0 0}
+.wf{display:grid;gap:4px}
+.wl{--c:var(--navyH);position:relative;background:color-mix(in srgb,var(--c) 8%,var(--card));border:1px solid color-mix(in srgb,var(--c) 30%,var(--card));border-radius:14px;padding:10px 12px 12px}
+.wl h4{margin:0 0 10px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--c)}
+.ws{display:grid;gap:22px}
+.wb{position:relative;background:var(--card);border:2px solid var(--c);border-radius:12px;padding:10px 12px 10px 52px;min-height:62px}
+.wb .n{position:absolute;left:12px;top:12px;width:30px;height:30px;border-radius:50%;background:var(--c);color:var(--onph);font-weight:800;font-size:14px;display:grid;place-items:center}
+.wb b{display:block;font-size:15px;line-height:1.3}.wb .s{display:block;font-size:13px;color:var(--mut);margin-top:2px}
+.wb.L::before{content:"beban besar";position:absolute;top:-10px;right:10px;background:var(--amber);color:var(--amber-ink);font-size:11px;font-weight:700;padding:0 8px;border-radius:999px;line-height:18px}
+.wb:not(:last-child)::after{content:"↓";position:absolute;left:50%;bottom:-21px;transform:translateX(-50%);color:var(--c);font-weight:800;font-size:16px;line-height:1}
+.wa{text-align:center;font-weight:800;font-size:20px;color:var(--mut);line-height:1.2}
+.wrow,.wrow1{display:grid;gap:4px}
+.wrow>.wl:first-child{margin-bottom:24px}.wrow>.wl:first-child::after{content:"↓";position:absolute;left:50%;bottom:-24px;transform:translateX(-50%);font-weight:800;font-size:20px;color:var(--mut)}
+@media (min-width:1200px){
+.wrow{grid-template-columns:2fr 3fr;gap:30px}.wrow>.wl:first-child{margin-bottom:0}.wrow>.wl:first-child::after{content:"→";left:auto;right:-24px;bottom:auto;top:50%;transform:translateY(-50%)}
+.wrow1{grid-template-columns:2fr 3fr}
+.ws{grid-template-columns:repeat(var(--k),1fr);gap:26px}
+.wb:not(:last-child)::after{content:"→";left:auto;right:-25px;bottom:auto;top:50%;transform:translateY(-50%)}
+.wl{padding-left:8px;padding-right:8px}.ws{gap:34px}
+.wrow,.wrow1{gap:16px}.wrow>.wl:first-child::after{right:-14px;font-size:16px}
+}
+.docs code{font-size:13.5px;background:var(--soft);padding:1px 6px;border-radius:6px;white-space:nowrap}.docs td:nth-child(3){white-space:nowrap}
+/* layar lebar: nav jadi sidebar, konten dibagi kolom */
+.two{display:grid;gap:0 24px;align-items:start}.two>*{min-width:0}
+.qgrid{display:grid;gap:0 12px}.qgrid>*{min-width:0}
+@media (min-width:1000px){
+main{max-width:1480px}
+.two,.qgrid{grid-template-columns:1fr 1fr}.qgrid .theme{grid-column:1/-1}
+.kpis{grid-template-columns:repeat(6,1fr)}.tools{grid-template-columns:repeat(3,1fr)}
+.intro{display:grid;grid-template-columns:1fr 1fr;column-gap:28px;align-items:start}.intro h3{grid-column:1/-1}.intro>p{grid-column:1}.intro>.scroll{grid-column:2;grid-row:2/span 3;margin-top:8px}
+.phases{display:grid;grid-template-columns:repeat(2,1fr);gap:0 24px}.phases>*{min-width:0}
+}
+@media (min-width:1280px){
+main{display:grid;grid-template-columns:190px minmax(0,1fr);column-gap:32px}
+main>*{grid-column:2}
+main>nav{grid-column:1;grid-row:1/span 60;align-self:start;flex-direction:column;padding-top:16px}
+main>nav a{border-radius:10px;font-size:15px;padding:8px 14px}
+.phases{grid-template-columns:repeat(4,1fr)}
+}
+@media (max-width:620px){.kpis,.res{grid-template-columns:1fr 1fr}.tools{grid-template-columns:1fr}.row .n{width:78px}.banner{padding:18px}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.row .b{transition:none}}
+.figw .box.warn{stroke:var(--amber);stroke-width:2.5}.figw .arA.dsh{stroke-dasharray:5 4}.figw .arB{fill:none;stroke:var(--bar);stroke-width:2}
+#bars .row .n{width:190px}#bars .row .g{position:absolute;left:0;top:0;bottom:0;border-radius:8px;background:color-mix(in srgb,var(--amber) 38%,var(--card))}
+#bars .row .b{background:var(--bar)}#bars .row.sel .b{background:var(--bar)}#bars .row.sel .n{color:var(--ink);font-weight:600}
+#bars .row .tg{width:118px;flex:none;font-size:12px;font-weight:700;text-align:center;border-radius:999px;padding:1px 6px;background:var(--sub);border:1px solid var(--line);color:var(--mut)}
+#bars .row.sel .tg{background:#E6F4EA;border-color:#A8DAB5;color:#0D652D}#bars .row.na{cursor:not-allowed}#bars .row.na .tg{background:#FEF7E0;border-color:#FDD663;color:#3C2A00}
+#bars.up .row{cursor:default}#bars.up .row .g{background:var(--bar);z-index:1}#bars.up .row .b{background:var(--teal)}
+.figw .lb{font-size:13px;font-weight:700;fill:var(--head)}
+#segs .row .c{width:88px}
+.src a{color:var(--navy);font-weight:600}
+@media (min-width:1200px){.wa{display:grid;grid-template-columns:repeat(5,1fr);gap:34px;padding:0 9px}.wa.r span{grid-column:5}.wa.l span{grid-column:1}
+.ws.rev{direction:rtl}.ws.rev .wb{direction:ltr}.ws.rev .wb:not(:last-child)::after{content:"←";right:auto;left:-25px}}
+@media (max-width:620px){#bars .row{flex-wrap:wrap;gap:4px 8px}#bars .row .n{width:100%}#bars .row .tg{width:auto}}
+</style>
+</head><body>
+<a href="https://bagusbernadi.github.io/" style="display:inline-block;margin:12px 16px;font:600 14px/1.4 'Source Sans 3',Arial,sans-serif;color:#1A73E8;text-decoration:none">← All projects / Semua project</a>
+<main>
+<nav aria-label="Section navigation"><a href="#s1">Background</a><a href="#s2">Business Questions</a><a href="#s3">RFM &amp; Segmentation</a><a href="#s4">Dataset</a><a href="#s5">Tools</a><a href="#s6">Work Plan</a><a href="#s7">Project Outputs</a><a href="#s8">Success Criteria</a><a href="#s9">Assumptions &amp; Limitations</a></nav>
+
+<header class="banner"><h1>Project 34: Customer Behavioral Segmentation</h1>
+<p class="goal"><b>Tujuan project:</b> membangun segmentasi pelanggan dari perilaku belanja (frekuensi, nilai order, kategori produk, waktu belanja, dan cara bayar) untuk menemukan segmen yang paling bernilai dan yang berisiko berhenti belanja, sehingga strategi retensi, cross-sell, dan promo bisa diarahkan ke segmen yang tepat.</p>
+<div class="tags"><span class="tlab">Kategori:</span><span class="tag a">Rancangan project</span><span class="tag c1">E-commerce / retail</span><span class="tag c2">Dataset publik (Olist)</span><span class="tag c3">SQL + K-Means</span></div></header>
+
+<section class="card intro">
+<h3>Project Introduction</h3>
+<p>Bayangkan pemilik toko kelontong yang hafal pelanggannya. Ada yang datang setiap hari membeli sedikit, ada yang sebulan sekali tetapi belanja banyak, dan ada yang dulu rutin datang tetapi sekarang jarang terlihat. Ia memperlakukan mereka berbeda: memberi potongan untuk yang mulai jarang datang dan menawarkan barang baru ke yang belanja banyak.</p>
+<p>Toko yang punya ribuan pelanggan tidak bisa menghafal seperti itu. Pengelompokan harus dilakukan dari catatan transaksi: kapan terakhir belanja, seberapa sering, berapa nilainya, dan apa yang dibeli.</p>
+<div class="scroll"><table><tr><th>Di toko kelontong</th><th>Di data transaksi</th></tr>
+<tr><td>Buku catatan belanja pelanggan</td><td>Data order marketplace berisi pelanggan, waktu, nilai, produk, pembayaran, dan review</td></tr>
+<tr><td>Kapan terakhir datang</td><td>Recency: hari sejak transaksi terakhir</td></tr>
+<tr><td>Seberapa sering datang</td><td>Frequency: jumlah transaksi dalam satu periode</td></tr>
+<tr><td>Total belanja</td><td>Monetary: total nilai transaksi</td></tr>
+<tr><td>Jenis barang (sembako, pulsa, jajanan)</td><td>Kategori produk, misalnya kecantikan, perlengkapan rumah, atau komputer</td></tr>
+<tr><td>"Langganan setia", "mulai jarang datang"</td><td>Segmen pelanggan, misalnya Champions atau At risk</td></tr>
+</table></div>
+<p>Project ini meng-upgrade ide segmentasi lama yang menebak usia, gender, dan pendidikan pelanggan. Datanya diganti dengan dataset publik Olist yang asal-usulnya jelas, dan tebakan demografi diganti dengan <b>fitur perilaku belanja</b> yang benar-benar ada di data, lalu dua cara pengelompokan dibandingkan: K-Means dan RFM rule-based. Kata bergaris bawah putus-putus kuning bisa diklik untuk melihat artinya.</p>
+<div class="layout">
+<h3>Gambaran alur kerja segmentasi pelanggan</h3>
+<p class="lead">Prosesnya bisa dibayangkan sebagai tiga jalur. Jalur pertama adalah aktivitas belanja pelanggan. Jalur kedua adalah cara segmentasi di project lama. Jalur ketiga adalah yang dibangun di project ini.</p>
+<div class="figw"><svg viewBox="0 0 1240 434" role="img" aria-label="Alur kerja: aktivitas belanja pelanggan, segmentasi lama berbasis tebakan demografi, dan jalur baru berupa fitur perilaku, K-Means dan RFM, profil segmen, dan dashboard"><defs><marker id="mN" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker><marker id="mT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="aht" d="M0 0L10 5L0 10z"/></marker></defs><rect class="lane" x="0" y="8" width="1240" height="130" rx="14"/><rect class="lane" x="0" y="150" width="1240" height="140" rx="14"/><rect class="lane" x="0" y="302" width="1240" height="130" rx="14"/>
+<text class="ln" x="16" y="78">Aktivitas</text><text class="ln" x="16" y="96">belanja</text>
+<text class="ln" x="16" y="218">Segmentasi</text><text class="ln" x="16" y="236">lama</text>
+<text class="ln" x="16" y="362">Jalur data</text><text class="ln" x="16" y="380">baru</text>
+<rect class="box" x="120" y="52" width="200" height="60" rx="10"/><text class="bt b" x="220" y="78" text-anchor="middle">Pelanggan</text><text class="st" x="220" y="98" text-anchor="middle">pelanggan unik marketplace</text><line class="ar" x1="320" x2="366" y1="82" y2="82" marker-end="url(#mN)"/><rect class="box" x="370" y="52" width="200" height="60" rx="10"/><text class="bt b" x="470" y="78" text-anchor="middle">Order produk</text><text class="st" x="470" y="98" text-anchor="middle">kategori produk</text><line class="ar" x1="570" x2="616" y1="82" y2="82" marker-end="url(#mN)"/><rect class="box" x="620" y="52" width="200" height="60" rx="10"/><text class="bt b" x="720" y="78" text-anchor="middle">Pembayaran</text><text class="st" x="720" y="98" text-anchor="middle">kartu, boleto, voucher</text><line class="ar" x1="820" x2="866" y1="82" y2="82" marker-end="url(#mN)"/><rect class="box" x="870" y="52" width="240" height="60" rx="10"/><text class="bt b" x="990" y="78" text-anchor="middle">Catatan order</text><text class="st" x="990" y="98" text-anchor="middle">dataset Olist</text>
+<line class="dt" x1="170" x2="170" y1="116" y2="192" marker-end="url(#mN)"/><text class="st" x="182" y="176">setiap order tercatat dengan waktu, nilai, dan kategori produk</text>
+<rect class="box" x="120" y="196" width="200" height="62" rx="10"/><text class="bt b" x="220" y="222" text-anchor="middle">Tebak usia, gender</text><text class="st" x="220" y="242" text-anchor="middle">lewat LLM atau aturan</text><line class="ar" x1="320" x2="366" y1="227" y2="227" marker-end="url(#mN)"/><rect class="box" x="370" y="196" width="200" height="62" rx="10"/><text class="bt b" x="470" y="222" text-anchor="middle">Segmen demografi</text><text class="st" x="470" y="242" text-anchor="middle">berdasarkan tebakan</text><line class="ar" x1="570" x2="616" y1="227" y2="227" marker-end="url(#mN)"/><rect class="box" x="620" y="196" width="200" height="62" rx="10"/><text class="bt b" x="720" y="222" text-anchor="middle">Strategi umum</text><text class="st" x="720" y="242" text-anchor="middle">sulit ditindaklanjuti</text><line class="ar" x1="820" x2="866" y1="227" y2="227" marker-end="url(#mN)"/><rect class="box warn" x="870" y="196" width="240" height="62" rx="10"/><text class="bt b" x="990" y="222" text-anchor="middle">Bias dan sensitif</text><text class="st" x="990" y="242" text-anchor="middle">tidak bisa dibuktikan</text>
+<line class="arT" x1="220" x2="220" y1="262" y2="336" marker-end="url(#mT)"/><text class="lt" x="232" y="322">diganti fitur perilaku</text>
+<rect class="box hi" x="120" y="340" width="200" height="62" rx="10"/><text class="bt b" x="220" y="366" text-anchor="middle">Fitur perilaku</text><text class="st" x="220" y="386" text-anchor="middle">RFM, kategori, cicilan</text><line class="ar" x1="320" x2="366" y1="371" y2="371" marker-end="url(#mN)"/><rect class="box hi" x="370" y="340" width="200" height="62" rx="10"/><text class="bt b" x="470" y="366" text-anchor="middle">K-Means vs RFM</text><text class="st" x="470" y="386" text-anchor="middle">pilih k, bandingkan</text><line class="ar" x1="570" x2="616" y1="371" y2="371" marker-end="url(#mN)"/><rect class="box hi" x="620" y="340" width="200" height="62" rx="10"/><text class="bt b" x="720" y="366" text-anchor="middle">Profil segmen</text><text class="st" x="720" y="386" text-anchor="middle">SQL: CTE, window</text><line class="ar" x1="820" x2="866" y1="371" y2="371" marker-end="url(#mN)"/><rect class="box hi" x="870" y="340" width="240" height="62" rx="10"/><text class="bt b" x="990" y="366" text-anchor="middle">Dashboard + strategi</text><text class="st" x="990" y="386" text-anchor="middle">retensi, cross-sell</text>
+<line class="grp" x1="120" x2="1110" y1="410" y2="410"/><text class="gl" x="615" y="426" text-anchor="middle">Bagian yang dibangun di project ini</text>
+<circle class="mk" cx="120" cy="52" r="13"/><text class="mt" x="120" y="57" text-anchor="middle">1</text>
+<circle class="mk" cx="120" cy="196" r="13"/><text class="mt" x="120" y="201" text-anchor="middle">2</text>
+<circle class="mk" cx="120" cy="340" r="13"/><text class="mt" x="120" y="345" text-anchor="middle">3</text>
+<circle class="mk" cx="370" cy="340" r="13"/><text class="mt" x="370" y="345" text-anchor="middle">4</text>
+</svg></div>
+<ol class="legend">
+<li><b>Aktivitas belanja.</b> Pelanggan memesan produk di marketplace dan membayar dengan kartu kredit, boleto, atau voucher. Setiap order tercatat dengan waktu, nilai, kategori produk, dan review.</li>
+<li><b>Segmentasi lama.</b> Usia, gender, dan pendidikan ditebak dengan LLM atau aturan manual. Hasilnya tidak bisa dibuktikan dan menyentuh atribut sensitif.</li>
+<li><b>Fitur perilaku.</b> Dari transaksi dihitung recency, frequency, monetary, porsi belanja per kategori produk, jam belanja, cicilan, dan pemakaian voucher.</li>
+<li><b>Segmen dan dashboard.</b> K-Means dan RFM rule-based membentuk segmen, profilnya dihitung dengan SQL, lalu strategi per segmen ditampilkan di dashboard.</li>
+</ol>
+</div>
+</section>
+
+<div class="kpis">
+<div class="card kpi" style="--h:var(--navyH)"><span class="v">14</span><span class="l">pertanyaan analisis</span><span class="d">Hal yang ingin dijawab, 9 di antaranya prioritas utama (bagian 2).</span></div>
+<div class="card kpi" style="--h:var(--amberH)"><span class="v">5</span><span class="l">ukuran kinerja (KPI)</span><span class="d">RFM score, revenue share, silhouette score, stabilitas segmen, dan churn risk (bagian 3).</span></div>
+<div class="card kpi" style="--h:var(--tealH)"><span class="v">12</span><span class="l">langkah pengerjaan</span><span class="d">Dari audit data lama sampai dashboard dan README (bagian 6).</span></div>
+<div class="card kpi" style="--h:var(--plumH)"><span class="v">±100 rb</span><span class="l">order (2016–2018)</span><span class="d">Perkiraan dari halaman dataset, diverifikasi saat data diunduh.</span></div>
+<div class="card kpi" style="--h:var(--roseH)"><span class="v">4–6</span><span class="l">segmen target</span><span class="d">Jumlah akhir dipilih dengan elbow dan silhouette.</span></div>
+<div class="card kpi" style="--h:var(--skyH)"><span class="v">4</span><span class="l">tabel data</span><span class="d">Order bersih, item dan kategori produk, fitur pelanggan, dan segmen (bagian 4).</span></div>
+</div>
+
+<h2 id="s1">1. Background<small>Kenapa tema ini dipilih</small></h2>
+<div class="card two">
+<div><h3>Latar belakang masalah</h3>
+<p>Project segmentasi lama memakai file transaksi yang asal-usulnya tidak jelas, lalu mengelompokkan pelanggan berdasarkan tebakan usia, gender, dan pendidikan. Tebakan itu dibuat dengan LLM atau aturan manual. Akibatnya:</p>
+<ul class="tight">
+<li>Segmen dibangun di atas tebakan, sehingga hasilnya tidak bisa dibuktikan dengan data.</li>
+<li>Menebak atribut sensitif berisiko bias dan tidak etis untuk dipakai dalam keputusan bisnis.</li>
+<li>Perilaku yang benar-benar tercatat (frekuensi, nilai, kategori belanja) belum dimanfaatkan.</li>
+<li>Tidak ada pengecekan apakah segmen stabil dari periode ke periode.</li>
+</ul></div>
+<div><h3>Alasan memilih tema ini sebagai portofolio</h3>
+<ul class="tight">
+<li><b>Tema yang umum di lowongan.</b> Segmentasi pelanggan dan RFM sering diminta untuk posisi Data Analyst di e-commerce dan retail.</li>
+<li><b>Menunjukkan skill yang lengkap.</b> Cleaning data besar, feature engineering dengan SQL (CTE, window function), K-Means, evaluasi model, dan cara menerjemahkan segmen menjadi strategi.</li>
+<li><b>Tingkat kesulitan sulit.</b> Machine learning yang dipakai sederhana, tetapi memilih fitur, jumlah segmen, dan menguji stabilitas butuh pertimbangan.</li>
+<li><b>Terhubung dengan project lain.</b> Melengkapi Project 22 (Cohort &amp; RFM Segmentation) dan Project 9 (Sales &amp; Customer Dashboard) dengan pendekatan berbasis perilaku.</li>
+</ul></div>
+</div>
+
+<h2 id="s2">2. Business Questions<small>Satu pertanyaan utama, dipecah menjadi pertanyaan yang lebih kecil</small></h2>
+<div class="callout a"><h4>Pertanyaan utama</h4>Segmen pelanggan apa yang terbentuk dari perilaku belanja nyata (frekuensi, nilai order, kategori produk, waktu belanja, cara bayar), dan segmen mana yang paling bernilai atau berisiko berhenti belanja?</div>
+<p class="how">Pertanyaan utama dipecah per tema. Label "Utama" berarti wajib dijawab dan dikerjakan lebih dulu. "Pendukung" memperdalam hasil. "Tambahan" dikerjakan jika waktu tersisa. Teks abu-abu di bawah tiap pertanyaan adalah cara menjawabnya.</p>
+<div class="fbar" role="group" aria-label="Filter pertanyaan"><span>Tampilkan:</span><button type="button" class="fb on" data-f="*">Semua <i>14</i></button><button type="button" class="fb" data-f="M">Utama <i>9</i></button><button type="button" class="fb" data-f="S">Pendukung <i>4</i></button><button type="button" class="fb" data-f="N">Tambahan <i>1</i></button></div>
+<div class="qgrid" id="qg">
+<p class="theme">Segmen yang terbentuk</p>
+<div class="q" data-p="M"><span class="id">Q1</span><span>Segmen apa saja yang terbentuk dari fitur perilaku belanja, dan apa ciri tiap segmen?<span class="pri M">Utama</span></span><span class="m">Profil rata-rata fitur per segmen</span></div>
+<div class="q" data-p="M"><span class="id">Q2</span><span>Berapa jumlah segmen yang paling tepat?<span class="pri M">Utama</span></span><span class="m">Elbow method dan silhouette score untuk k = 2 sampai 10</span></div>
+<div class="q" data-p="M"><span class="id">Q3</span><span>Apakah segmen K-Means mirip dengan segmen RFM rule-based, dan mana yang lebih mudah ditindaklanjuti?<span class="pri M">Utama</span></span><span class="m">Tabel silang K-Means × RFM</span></div>
+
+<p class="theme">Nilai pelanggan</p>
+<div class="q" data-p="M"><span class="id">Q4</span><span>Segmen mana yang menyumbang revenue terbesar?<span class="pri M">Utama</span></span><span class="m">Revenue share per segmen, Pareto pelanggan</span></div>
+<div class="q" data-p="S"><span class="id">Q5</span><span>Berapa rata-rata nilai transaksi dan frekuensi belanja di tiap segmen?<span class="pri S">Pendukung</span></span><span class="m">Rata-rata dan median per segmen</span></div>
+
+<p class="theme">Risiko berhenti belanja</p>
+<div class="q" data-p="M"><span class="id">Q6</span><span>Segmen mana yang berisiko berhenti belanja?<span class="pri M">Utama</span></span><span class="m">Recency tinggi dan frekuensi menurun dibanding periode sebelumnya</span></div>
+<div class="q" data-p="M"><span class="id">Q7</span><span>Berapa pelanggan di segmen berisiko, dan berapa nilai belanja yang dipertaruhkan?<span class="pri M">Utama</span></span><span class="m">Jumlah pelanggan dan revenue per bulan di segmen berisiko</span></div>
+
+<p class="theme">Pola belanja</p>
+<div class="q" data-p="M"><span class="id">Q8</span><span>Kategori produk apa yang dominan di tiap segmen, dan kategori apa yang cocok ditawarkan sebagai cross-sell?<span class="pri M">Utama</span></span><span class="m">Porsi belanja per kategori produk per segmen</span></div>
+<div class="q" data-p="S"><span class="id">Q9</span><span>Pada jam dan hari apa tiap segmen paling sering belanja?<span class="pri S">Pendukung</span></span><span class="m">Heatmap jam × hari per segmen</span></div>
+<div class="q" data-p="S"><span class="id">Q10</span><span>Cara bayar, jumlah cicilan, dan voucher apa yang paling sering dipakai tiap segmen?<span class="pri S">Pendukung</span></span><span class="m">Porsi payment type, rata-rata cicilan, dan pemakaian voucher per segmen</span></div>
+
+<p class="theme">Dampak</p>
+<div class="q" data-p="M"><span class="id">Q11</span><span>Jika frekuensi belanja segmen target naik sekian persen, berapa tambahan revenue per tahun?<span class="pri M">Utama</span></span><span class="m">Pelanggan × kenaikan frekuensi × rata-rata transaksi × 12</span></div>
+
+<p class="theme">Validitas</p>
+<div class="q" data-p="M"><span class="id">Q12</span><span>Apakah segmen stabil dari satu periode ke periode berikutnya?<span class="pri M">Utama</span></span><span class="m">Persentase pelanggan yang tetap di segmen yang sama</span></div>
+<div class="q" data-p="S"><span class="id">Q13</span><span>Berapa persen pelanggan yang hanya belanja sekali, dan apa pengaruhnya terhadap segmentasi?<span class="pri S">Pendukung</span></span><span class="m">Distribusi frequency per pelanggan unik</span></div>
+<div class="q" data-p="N"><span class="id">Q14</span><span>Apakah segmen berubah jika pelanggan dengan nilai ekstrem dibuang?<span class="pri">Tambahan</span></span><span class="m">Uji sensitivitas outlier</span></div>
+</div>
+
+<h2 id="s3">3. RFM &amp; Segmentation<span class="add">Komponen tambahan</span><small>Bagaimana pelanggan dikelompokkan, dan seberapa besar dampak menaikkan frekuensi belanja</small></h2>
+<p class="how">Segmen hanya berguna jika bisa dijelaskan dengan bahasa sederhana. Karena itu fitur dan aturan RFM ditetapkan di awal sebagai pembanding hasil K-Means. Arahkan kursor atau klik kata yang diberi garis bawah kuning untuk melihat pengertian dan rumusnya.</p>
+<div class="flowfull"><h3>Contoh aturan RFM sederhana</h3>
+<div class="card"><div class="figw fl"><svg viewBox="0 0 640 246" role="img" aria-label="Diagram percabangan aturan RFM: pelanggan dicek apakah baru saja belanja; jika tidak, masuk segmen At risk untuk program retensi; jika ya, dicek apakah frekuensi dan nilai belanjanya tinggi; jika ya masuk Champions, jika tidak masuk Regular atau Potential"><defs><marker id="fN" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker><marker id="fT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="aht" d="M0 0L10 5L0 10z"/></marker><marker id="fA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="aha2" d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="box" x="8" y="98" width="100" height="44" rx="10"/><text class="b2" x="58" y="125" text-anchor="middle">Customer</text>
+<line class="ar" x1="108" x2="144" y1="120" y2="120" marker-end="url(#fN)"/>
+<polygon class="dia" points="148,120 200,84 252,120 200,156"/><text class="b2" x="200" y="125" text-anchor="middle" style="font-size:13px">Recent?</text>
+<polyline class="arT" points="200,84 200,40 284,40" marker-end="url(#fT)"/><text class="lt" x="208" y="66">Ya</text>
+<polygon class="dia" points="288,40 350,8 412,40 350,72"/><text class="b2" x="350" y="45" text-anchor="middle" style="font-size:13px">High F &amp; M?</text>
+<line class="arT" x1="412" x2="456" y1="40" y2="40" marker-end="url(#fT)"/><text class="lt" x="434" y="32" text-anchor="middle">Ya</text>
+<rect class="okb" x="460" y="20" width="170" height="40" rx="20"/><text class="wt" x="545" y="45" text-anchor="middle">Champions</text>
+<polyline class="arB" points="350,72 350,120 456,120" marker-end="url(#fN)"/><text class="lb" x="358" y="100">Tidak</text>
+<rect class="box" x="460" y="98" width="170" height="44" rx="10"/><text class="b2" x="545" y="125" text-anchor="middle">Regular / Potential</text>
+<polyline class="arA" points="200,156 200,212 286,212" marker-end="url(#fA)"/><text class="la" x="208" y="190">Tidak</text>
+<rect class="scb" x="290" y="192" width="200" height="40" rx="20"/><text class="at" x="390" y="217" text-anchor="middle">At risk: retensi</text>
+</svg></div>
+<p>Pohon ini adalah versi RFM rule-based yang sederhana. K-Means mencari kelompok sendiri dari data, lalu kedua hasil dibandingkan.</p></div></div>
+
+<h3>Berapa tambahan revenue jika frekuensi belanja naik</h3>
+<p class="how">Setiap batang adalah revenue per bulan satu segmen (angka contoh, bukan hasil dari data). Klik sebuah segmen untuk memilihnya sebagai target program, lalu geser slider untuk mengatur kenaikan frekuensi belanja. Tambahan revenue dihitung dengan rumus pelanggan × kenaikan frekuensi × rata-rata transaksi × 12.</p>
+<div class="card"><div id="segs"></div>
+<div class="ctl"><label for="sl">Kenaikan frekuensi segmen terpilih</label><input id="sl" type="range" min="0" max="30" value="10"><output id="slo" for="sl">10%</output></div>
+<div class="res"><div>Revenue segmen/bulan<b id="r1"></b></div><div>Tambahan revenue/bulan<b id="r2"></b></div><div>Tambahan revenue/tahun<b id="r3"></b></div></div>
+<p id="ins" style="margin:12px 0 0;font-size:15.5px"></p></div>
+
+<h2 id="s4">4. Dataset<small>Dataset publik marketplace Olist (Brasil, 2016–2018)</small></h2>
+<div class="two"><div class="card">
+<p><b>Kenapa dataset ini?</b> Olist adalah data order nyata dari marketplace di Brasil yang sudah dianonimkan. Datanya memuat pelanggan unik, waktu order, nilai, kategori produk, pembayaran, dan review, sehingga cocok untuk fitur perilaku. Asal-usulnya jelas dan banyak dipakai, sehingga hasil analisis bisa diperiksa orang lain. Data lama transactions.csv tidak dipakai karena asal-usulnya tidak jelas.</p>
+<p><b>Ukuran:</b> sekitar 100 ribu order dari 2016 sampai 2018, tersebar di 9 file CSV yang dihubungkan lewat order_id dan customer_id (perkiraan dari halaman dataset, diverifikasi saat data diunduh). Lisensi CC BY-NC-SA 4.0 (non-komersial), dicek ulang di halaman dataset.</p>
+<p class="src"><b>Sumber data:</b> <a href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce" target="_blank" rel="noopener">here</a> (Versi: nomor versi Kaggle dicatat saat diunduh; Tanggal akses: akan diisi saat diunduh)</p>
+<p class="src"><b>Acuan ide:</b> <a href="https://github.com/bagusbernadi/Customer-feature-and-Segmentation" target="_blank" rel="noopener">here</a> (Versi: repo segmentasi lama, hanya ide dan kodenya yang dipakai; Tanggal akses: dicatat saat audit di Tahap A)</p>
+</div>
+<div class="callout g"><h4>Hipotesis yang akan diuji (belum terbukti)</h4>
+<p>1. Lebih dari 90% pelanggan hanya belanja sekali, sehingga frequency kurang membedakan segmen.</p>
+<p>2. Sekitar 20% pelanggan menyumbang lebih dari separuh revenue.</p>
+<p>3. Kategori produk dan jumlah cicilan lebih membedakan segmen dibanding jam belanja.</p>
+<p>4. Pelanggan dengan review score rendah lebih jarang belanja lagi.</p>
+<p>5. K-Means menghasilkan 4–6 segmen yang sebagian besar mirip dengan segmen RFM.</p></div></div>
+
+<h3>Empat tabel yang akan dibuat</h3>
+<p class="how">Data disimpan dalam beberapa tabel yang saling terhubung lewat order_id dan customer_unique_id. Fitur pelanggan dihitung per periode agar stabilitas segmen bisa diuji.</p>
+<div class="scroll"><table>
+<tr><th>Tabel</th><th>Isi (1 baris = …)</th><th>Kolom utama</th></tr>
+<tr><td><b>orders_clean</b></td><td>Satu order dengan status delivered</td><td>order_id, customer_unique_id, purchase_ts, order_value, freight_value, payment_type, installments, voucher_flag, review_score, customer_state</td></tr>
+<tr><td><b>order_items_clean</b></td><td>Satu produk di satu order, dengan kategori dalam bahasa Inggris</td><td>order_id, product_id, category_en, price</td></tr>
+<tr><td><b>customer_features</b></td><td>Satu pelanggan di satu periode</td><td>customer_id, period, recency, frequency, monetary, share_per_category, night_share, weekend_share, voucher_share, avg_installments, avg_review</td></tr>
+<tr><td><b>customer_segment</b></td><td>Satu pelanggan di satu periode dengan label segmennya</td><td>customer_id, period, kmeans_cluster, rfm_segment</td></tr>
+</table></div>
+
+<div class="two"><div><h3>Contoh isi tabel orders_clean</h3>
+<div class="scroll"><table class="sample"><tr><th>purchase_ts</th><th>customer_unique_id</th><th>order_value</th><th>payment_type</th><th>installments</th><th>review_score</th></tr>
+<tr><td>2017-11-24 20:41</td><td>c7a1… (contoh)</td><td>129,90</td><td>credit_card</td><td>3</td><td>5</td></tr>
+<tr><td>2018-03-05 09:12</td><td>4e2b… (contoh)</td><td>58,50</td><td>boleto</td><td>1</td><td>4</td></tr></table></div>
+<p class="note">Angka karangan, bukan data asli. Nilai dalam real Brasil (R$). Kolom order_id, freight_value, voucher_flag, dan customer_state tidak ditampilkan agar tabel ringkas.</p></div>
+
+<div class="card"><p style="margin:0 0 6px"><b>Fitur perilaku yang dipakai</b>:</p>
+<span class="chip">Recency</span><span class="chip">Frequency</span><span class="chip">Monetary</span><span class="chip">Porsi belanja per kategori</span><span class="chip">Belanja malam hari</span><span class="chip">Belanja akhir pekan</span><span class="chip">Payment type</span><span class="chip">Rata-rata cicilan</span><span class="chip">Pemakaian voucher</span><span class="chip">Rata-rata review</span>
+<p style="margin:10px 0 4px"><b>Contoh kategori produk</b> (dari tabel terjemahan bawaan dataset): health_beauty, bed_bath_table, sports_leisure, computers_accessories, furniture_decor. Usia, gender, dan pendidikan tidak dipakai dan tidak ditebak.</p></div></div>
+
+<h2 id="s5">5. Tools<small>Alat yang dipakai dan alasannya</small></h2>
+<div class="tools">
+<div class="card"><b>DuckDB + SQL</b><p class="r">Membaca 9 file CSV Olist sekaligus, menggabungkan dan membersihkan data, dan menghitung fitur pelanggan dengan CTE dan window function.</p><p class="alt">Bisa langsung membaca banyak CSV tanpa server. Sesuai kolom Tools di daftar portofolio.</p></div>
+<div class="card"><b>Python (pandas)</b><p class="r">Menyiapkan fitur untuk model, memeriksa distribusi data, dan cek silang hasil SQL.</p><p class="alt">Dipakai bersama DuckDB, bukan menggantikannya.</p></div>
+<div class="card"><b>scikit-learn</b><p class="r">StandardScaler menyamakan skala fitur, K-Means membentuk segmen, dan silhouette score membantu memilih jumlah segmen.</p><p class="alt">Library standar untuk machine learning di Python, mudah dijelaskan saat wawancara.</p></div>
+<div class="card"><b>Tabel terjemahan kategori</b><p class="r">Menerjemahkan nama kategori produk dari bahasa Portugis ke bahasa Inggris dengan file bawaan dataset.</p><p class="alt">Menggantikan tebakan LLM di project lama. Hasilnya pasti dan bisa diperiksa.</p></div>
+<div class="card"><b>Streamlit + Plotly</b><p class="r">Dashboard profil segmen, revenue share, peta jam belanja, dan kalkulator uplift.</p><p class="alt">Daftar portofolio menyebut Looker Studio sebagai alternatif. Streamlit dipilih agar konsisten.</p></div>
+<div class="card"><b>GitHub + Markdown</b><p class="r">Menyimpan kode, query, tabel profil segmen, dan README berisi strategi per segmen.</p><p class="alt">Data Olist tidak di-commit. Cara mengunduhnya dijelaskan di data/README.md.</p></div>
+</div>
+
+<h2 id="s6">6. Work Plan<small>Setiap tahap punya warna sendiri. Label "beban besar" = langkah yang paling banyak memakan waktu</small></h2>
+<p class="how">Urutannya seperti menata ulang rak toko: periksa dulu catatan barang yang ada, tentukan cara mengelompokkan, susun barang ke rak, lalu pastikan pengelompokan itu masuk akal bagi pembeli.</p>
+<h3>Alur tahapan kerja</h3>
+<div class="card"><div class="wf">
+<div class="wrow"><div class="wl" style="--c:var(--navyH)"><h4>Tahap A · Perencanaan</h4><div class="ws" style="--k:2"><div class="wb"><span class="n">1</span><b>Audit repo lama dan data Olist</b><span class="s">Q13</span></div><div class="wb"><span class="n">2</span><b>Definisi fitur dan aturan RFM</b><span class="s">kamus fitur</span></div></div></div><div class="wl" style="--c:var(--tealH)"><h4>Tahap B · Menyiapkan data</h4><div class="ws" style="--k:3"><div class="wb L"><span class="n">3</span><b>Cleaning transaksi</b><span class="s">data bersih</span></div><div class="wb"><span class="n">4</span><b>Gabung tabel dan load</b><span class="s">file DuckDB</span></div><div class="wb L"><span class="n">5</span><b>Feature engineering SQL</b><span class="s">fitur per periode</span></div></div></div></div>
+<div class="wa r"><span>↓</span></div>
+<div class="wl" style="--c:var(--plumH)"><h4>Tahap C · Menghitung dan menganalisis</h4><div class="ws rev" style="--k:5"><div class="wb"><span class="n">6</span><b>K-Means dan pilih k</b><span class="s">Q2</span></div><div class="wb"><span class="n">7</span><b>Bandingkan dengan RFM</b><span class="s">Q3</span></div><div class="wb L"><span class="n">8</span><b>Profil segmen</b><span class="s">Q1, Q4–Q10</span></div><div class="wb"><span class="n">9</span><b>Stabilitas segmen</b><span class="s">Q12, Q14</span></div><div class="wb"><span class="n">10</span><b>Hitung uplift</b><span class="s">Q11</span></div></div></div>
+<div class="wa l"><span>↓</span></div>
+<div class="wrow1"><div class="wl" style="--c:var(--roseH)"><h4>Tahap D · Menyajikan</h4><div class="ws" style="--k:2"><div class="wb L"><span class="n">11</span><b>Membuat dashboard</b><span class="s">link dashboard</span></div><div class="wb"><span class="n">12</span><b>README dan strategi</b><span class="s">repositori siap</span></div></div></div></div>
+</div>
+<p class="note" style="text-align:center;margin-top:12px">Panah menunjukkan urutan pengerjaan. Angka di kotak sama dengan nomor langkah di bawah.</p></div>
+
+<div class="phases"><div class="ph" style="--ph:var(--navyH)"><p class="phase">Tahap A · Perencanaan</p>
+<ol class="steps">
+<li><b class="t">Mengaudit repo lama dan data Olist</b><p>Mempelajari 9 file Olist, kolom, periode, hubungan antar tabel, dan porsi pelanggan yang hanya belanja sekali. Mencatat bagian project lama yang diganti, terutama tebakan demografi (Q13).</p><p class="meta">Hasil: catatan audit data · Alat: DuckDB, Markdown</p></li>
+<li><b class="t">Mendefinisikan fitur dan aturan RFM</b><p>Menetapkan fitur perilaku, panjang periode, batas skor RFM, dan nama segmen yang mudah dipahami.</p><p class="meta">Hasil: kamus fitur dan aturan RFM · Alat: Markdown</p></li>
+</ol></div>
+<div class="ph" style="--ph:var(--tealH)"><p class="phase">Tahap B · Menyiapkan data</p>
+<ol class="steps" start="3" style="counter-reset:s 2">
+<li class="L"><b class="t">Membersihkan data order</b><p>Menyaring order berstatus delivered, memperbaiki tipe data, menghapus duplikat, dan menangani nilai ekstrem. Setiap keputusan dicatat.</p><p class="meta">Hasil: data bersih dan log cleaning · Alat: DuckDB</p></li>
+<li><b class="t">Menggabungkan tabel dan memuat ke database</b><p>Menggabungkan order, item, produk, pembayaran, dan review lewat order_id, menerjemahkan kategori, lalu memuat hasilnya ke DuckDB.</p><p class="meta">Hasil: file database · Alat: DuckDB</p></li>
+<li class="L"><b class="t">Menghitung fitur dengan SQL</b><p>Menghitung recency, frequency, monetary, porsi belanja per kategori, jam belanja, cicilan, voucher, dan review per pelanggan per periode dengan CTE dan window function.</p><p class="meta">Hasil: tabel customer_features · Alat: SQL</p></li>
+</ol></div>
+<div class="ph" style="--ph:var(--plumH)"><p class="phase">Tahap C · Menghitung dan menganalisis</p>
+<ol class="steps" style="counter-reset:s 5">
+<li><b class="t">Menjalankan K-Means dan memilih k</b><p>Menyamakan skala fitur, mencoba k = 2 sampai 10, lalu memilih k dengan elbow dan silhouette score (Q2).</p><p class="meta">Hasil: label cluster dan grafik pemilihan k · Alat: scikit-learn</p></li>
+<li><b class="t">Membandingkan dengan RFM rule-based</b><p>Membuat segmen RFM dengan aturan dari langkah 2, lalu membandingkannya dengan cluster K-Means dalam tabel silang (Q3).</p><p class="meta">Hasil: tabel perbandingan · Alat: SQL, pandas</p></li>
+<li class="L"><b class="t">Menyusun profil segmen</b><p>Menjawab Q1 dan Q4–Q10: ciri tiap segmen, revenue share, segmen berisiko, kategori dominan, jam belanja, cara bayar, dan voucher.</p><p class="meta">Hasil: tabel profil dan grafik · Alat: SQL, Plotly</p></li>
+<li><b class="t">Menguji stabilitas segmen</b><p>Membandingkan segmen di dua periode dan menguji pengaruh pelanggan bernilai ekstrem (Q12, Q14).</p><p class="meta">Hasil: matriks perpindahan segmen · Alat: pandas</p></li>
+<li><b class="t">Menghitung estimasi uplift</b><p>Menghitung tambahan revenue jika frekuensi segmen target naik 5%, 10%, dan 20% (Q11). Semua angka diberi label estimated.</p><p class="meta">Hasil: tabel skenario uplift · Alat: pandas</p></li>
+</ol></div>
+<div class="ph" style="--ph:var(--roseH)"><p class="phase">Tahap D · Menyajikan</p>
+<ol class="steps" style="counter-reset:s 10">
+<li class="L"><b class="t">Membuat dashboard</b><p>Dashboard 4 halaman: Ringkasan Segmen, Profil Segmen, Risiko Berhenti Belanja, dan Kalkulator Uplift. Dilengkapi filter periode dan segmen.</p><p class="meta">Hasil: link dashboard · Alat: Streamlit, Plotly</p></li>
+<li><b class="t">Menulis README dan strategi per segmen</b><p>Menulis temuan, strategi retensi, cross-sell, dan promo per segmen, estimasi uplift, serta batasan data.</p><p class="meta">Hasil: repositori GitHub siap ditinjau · Alat: Markdown, GitHub</p></li>
+</ol></div></div>
+
+<h2 id="s7">7. Project Outputs<span class="add">Komponen tambahan</span><small>Hasil nyata yang bisa dibuka, dibaca, atau dipakai ulang setelah project selesai</small></h2>
+<p class="how">Setiap kartu adalah satu output. Label "Utama" berarti wajib dibuat, "Opsional" dibuat jika waktu tersisa. Setiap output ditujukan untuk pembaca yang berbeda.</p>
+<div class="outs"><div class="card out" style="--h:var(--navyH)"><div class="oh"><b>Dashboard segmen</b><span class="ob">Utama</span></div><ul><li>4 halaman: Ringkasan Segmen, Profil Segmen, Risiko, dan Kalkulator Uplift.</li><li>Filter periode dan segmen.</li><li>Bentuk: link publik (Streamlit Community Cloud).</li><li>Untuk: tim marketing dan CRM.</li></ul></div><div class="card out" style="--h:var(--roseH)"><div class="oh"><b>Playbook strategi per segmen</b><span class="ob">Utama</span></div><ul><li>Satu halaman: ciri segmen, strategi retensi, cross-sell, dan promo.</li><li>Bisa dipahami tanpa membuka dashboard.</li><li>Bentuk: PDF atau PNG.</li><li>Untuk: manajemen dan recruiter.</li></ul></div><div class="card out" style="--h:var(--tealH)"><div class="oh"><b>Database &amp; query SQL</b><span class="ob">Utama</span></div><ul><li>4 tabel di DuckDB dan query fitur dengan CTE dan window function.</li><li>Bisa dibuat ulang dari file transaksi.</li><li>Bentuk: folder sql/ dan skrip load.</li><li>Untuk: analis lain yang ingin memakai ulang fitur.</li></ul></div><div class="card out" style="--h:var(--plumH)"><div class="oh"><b>Tabel segmen pelanggan</b><span class="ob">Utama</span></div><ul><li>Label K-Means dan RFM per pelanggan per periode.</li><li>Dilengkapi profil rata-rata tiap segmen.</li><li>Bentuk: file CSV.</li><li>Untuk: dipakai ulang di project lain atau tools CRM.</li></ul></div><div class="card out" style="--h:var(--skyH)"><div class="oh"><b>Notebook modeling</b><span class="ob">Utama</span></div><ul><li>Pemilihan k, perbandingan dengan RFM, stabilitas, dan uji outlier.</li><li>Semua grafik disertai penjelasan singkat.</li><li>Bentuk: Jupyter Notebook (.ipynb).</li><li>Untuk: pembaca teknis yang ingin melihat cara segmen dibentuk.</li></ul></div><div class="card out" style="--h:var(--amberH)"><div class="oh"><b>Laporan temuan &amp; rekomendasi</b><span class="ob">Utama</span></div><ul><li>Segmen, strategi, estimasi uplift, dan batasan data.</li><li>Angka uplift diberi label estimated atau simulated.</li><li>Bentuk: README di GitHub.</li><li>Untuk: semua pembaca, sebagai pintu masuk project.</li></ul></div><div class="card out" style="--h:var(--navyH)"><div class="oh"><b>Catatan audit data</b><span class="ob">Utama</span></div><ul><li>Struktur data Olist, porsi pelanggan sekali belanja, dan perubahan dari project lama.</li><li>Menjelaskan kenapa tebakan demografi dihapus.</li><li>Bentuk: Markdown di folder docs/.</li><li>Untuk: reviewer yang menilai kejujuran analisis.</li></ul></div><div class="card out" style="--h:var(--tealH)"><div class="oh"><b>Slide presentasi</b><span class="ob opt">Opsional</span></div><ul><li>5–7 slide tentang masalah, segmen, strategi, dan dampak.</li><li>Bentuk: PDF atau PowerPoint.</li><li>Untuk: presentasi saat wawancara kerja.</li></ul></div></div>
+
+<h3>Daftar dokumen yang akan dihasilkan</h3>
+<p class="how">Nama file adalah usulan awal dan bisa disesuaikan. Tabel diurutkan menurut tahap pengerjaan (A sampai D). File transaksi besar dan file database tidak di-commit.</p>
+<div class="scroll"><table class="docs"><tr><th>Nama dokumen</th><th>Isi</th><th>Tahap</th><th>Label</th></tr>
+<tr><td><code>docs/data_audit.md</code></td><td>Struktur data Olist, cek kualitas, dan perubahan dari project lama</td><td>Tahap A</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>docs/feature_dictionary.md</code></td><td>Definisi fitur dan aturan RFM</td><td>Tahap A</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>data/raw/olist/*.csv</code></td><td>9 file CSV Olist. Tidak di-commit, diunduh dari Kaggle</td><td>Tahap B</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>data/README.md</code></td><td>Cara mengunduh dataset, versi, tanggal akses, dan lisensi</td><td>Tahap B</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>sql/01_clean.sql</code></td><td>Cleaning dan penggabungan tabel</td><td>Tahap B</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>sql/02_features.sql</code></td><td>Fitur pelanggan per periode</td><td>Tahap B</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>docs/cleaning_log.md</code></td><td>Catatan keputusan cleaning</td><td>Tahap B</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>segments.duckdb</code></td><td>File database. Tidak di-commit, dibuat ulang dari skrip</td><td>Tahap B</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>notebooks/segmentation.ipynb</code></td><td>K-Means, pemilihan k, perbandingan RFM, dan stabilitas</td><td>Tahap C</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>sql/03_profiles.sql</code></td><td>Profil segmen</td><td>Tahap C</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>outputs/customer_segments.csv</code></td><td>Label segmen per pelanggan per periode</td><td>Tahap C</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>outputs/uplift_scenarios.csv</code></td><td>Skenario estimasi uplift</td><td>Tahap C</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>dashboard/app.py</code></td><td>Aplikasi dashboard Streamlit (4 halaman)</td><td>Tahap D</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>requirements.txt</code></td><td>Daftar library Python yang dibutuhkan</td><td>Tahap D</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>outputs/segment_playbook.pdf</code></td><td>Playbook strategi per segmen</td><td>Tahap D</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>README.md</code></td><td>Temuan, strategi, dampak, batasan, dan cara menjalankan</td><td>Tahap D</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>index.html</code></td><td>Halaman rancangan project ini (GitHub Pages)</td><td>Tahap D</td><td><span class="ob">Utama</span></td></tr>
+<tr><td><code>slides/presentation.pdf</code></td><td>Slide presentasi wawancara</td><td>Tahap D</td><td><span class="ob opt">Opsional</span></td></tr>
+</table></div>
+
+<h2 id="s8">8. Success Criteria<span class="add">Komponen tambahan</span><small>Kapan project dianggap selesai dan berhasil</small></h2>
+<div class="card"><h3>Project dianggap berhasil jika</h3>
+<ul class="tight">
+<li>Kesembilan pertanyaan berlabel "Utama" terjawab dengan angka dari data.</li>
+<li>Jumlah segmen dipilih dengan alasan yang tercatat (elbow dan silhouette score), dan setiap segmen punya nama serta strategi yang jelas.</li>
+<li>Stabilitas segmen antar periode dilaporkan apa adanya, dengan target minimal 70% pelanggan tetap di segmen yang sama.</li>
+<li>Tidak ada atribut demografi yang ditebak, dan profil segmen dari SQL sama dengan hitungan pandas pada sampel yang dicek.</li>
+<li>Orang awam bisa membuka dashboard dan menyebutkan segmen paling bernilai dan paling berisiko dalam waktu kurang dari 1 menit.</li>
+<li>Checklist standar terpenuhi: pertanyaan bisnis, data cleaning, analisis SQL, dashboard ter-deploy, README berisi insight dan rekomendasi.</li>
+</ul></div>
+
+<h2 id="s9">9. Assumptions &amp; Limitations<span class="add">Komponen tambahan</span><small>Keputusan yang sudah diambil dan hal yang perlu diwaspadai</small></h2>
+<div class="two"><div><details open><summary>Dataset: Olist (Kaggle) <span class="pill">Sudah Anda setujui</span></summary><p>Dataset publik marketplace Brasil 2016–2018 dengan lisensi CC BY-NC-SA 4.0 (non-komersial), sesuai data di hub portofolio. Data lama transactions.csv tidak dipakai karena asal-usulnya tidak jelas. Versi dan tanggal akses dicatat saat data diunduh.</p></details>
+<details><summary>Tools: DuckDB + Streamlit + Plotly <span class="pill">Sudah Anda setujui</span></summary><p>Sesuai kolom Tools di daftar portofolio, dengan Streamlit dipilih dibanding Looker Studio agar konsisten dengan project lain.</p></details></div>
+<div><details><summary>Ruang lingkup <span class="pill d">Usulan awal</span></summary><p>Data dibagi menjadi dua periode yang sama panjang untuk uji stabilitas. Segmentasi memakai K-Means dan RFM rule-based saja. Framing sebagai perilaku belanja konsumen retail, tanpa usia, gender, atau pendidikan.</p></details>
+<details><summary>Hal yang perlu diwaspadai <span class="pill d">Usulan awal</span></summary>
+<p><b>Konteks Brasil.</b> Data berasal dari marketplace Brasil tahun 2016–2018, sehingga pola belanjanya belum tentu sama dengan pasar Indonesia saat ini.</p>
+<p><b>Banyak pelanggan sekali belanja.</b> Jika sebagian besar pelanggan hanya belanja sekali, segmen lebih banyak dibedakan oleh nilai dan kategori. Hal ini dijelaskan apa adanya di README.</p>
+<p><b>Segmen bukan penyebab.</b> Segmen menggambarkan pola belanja, bukan alasan pelanggan berperilaku seperti itu.</p>
+<p><b>K-Means sensitif.</b> Hasil K-Means dipengaruhi skala fitur dan nilai ekstrem. Fitur disamakan skalanya dan pengaruh outlier diuji (Q14).</p>
+<p><b>Uplift adalah estimasi.</b> Kenaikan frekuensi adalah asumsi skenario, bukan hasil uji coba program.</p></details></div></div>
+</main>
+
+
+<script>
+const $=id=>document.getElementById(id),jt=v=>'R$'+Math.round(v).toLocaleString('id-ID');
+const S=[["Champions",900,.5,250],["Loyal",2000,.25,160],["Potential",6000,.1,140],["At risk",4000,.05,150],["Hibernating",30000,.01,120]];
+const rev=s=>s[1]*s[2]*s[3],MAXR=Math.max(...S.map(rev));let sel=3;
+function draw(){const x=$('sl').value/100,s=S[sel],r=rev(s),up=s[1]*s[2]*x*s[3];
+$('slo').textContent=Math.round(x*100)+'%';
+$('segs').innerHTML=S.map((t,i)=>`<button type="button" class="row${i==sel?' sel':''}" data-i="${i}" aria-pressed="${i==sel}"><span class="n">${t[0]}</span><span class="tr"><span class="b" style="width:${rev(t)/MAXR*100}%"></span></span><span class="c">${jt(rev(t))}</span></button>`).join('');
+$('r1').textContent=jt(r);$('r2').textContent='+'+jt(up);$('r3').textContent='+'+jt(up*12);
+const per=s[1]?up*12/s[1]:0;
+$('ins').innerHTML=x==0?`Tanpa kenaikan frekuensi, revenue segmen ${s[0]} tetap ${jt(r)} per bulan.`:`Segmen <b>${s[0]}</b> berisi ${s[1].toLocaleString('id-ID')} pelanggan dengan rata-rata ${s[2].toLocaleString('id-ID')} order per bulan. Kenaikan frekuensi ${Math.round(x*100)}% menambah sekitar <b>${jt(up*12)} per tahun</b>, atau ${jt(per)} per pelanggan. Bandingkan antar segmen: segmen kecil bernilai tinggi sering memberi uplift per pelanggan terbesar. Angka contoh, bukan hasil dari data.`}
+$('segs').onclick=e=>{const r=e.target.closest('.row');if(r){sel=+r.dataset.i;draw()}};$('sl').oninput=draw;draw();
+const G=[["segmentasi","i","Mengelompokkan pelanggan yang perilakunya mirip agar bisa diberi perlakuan yang sesuai."],["segmen","i","Kelompok pelanggan dengan perilaku belanja yang mirip."],["RFM","","Recency, Frequency, Monetary: tiga ukuran dasar perilaku pelanggan.\nRumus skor RFM: tiap ukuran diberi skor 1–5 berdasarkan kuantil, lalu digabung, misalnya 5-4-5."],["RFM score","","Gabungan skor Recency, Frequency, dan Monetary per pelanggan.\nRumus: skor 1–5 per ukuran berdasarkan kuantil, misalnya R=5, F=4, M=5 menjadi 545."],["Recency","","Jumlah hari sejak order terakhir pelanggan. Makin kecil makin baik.\nRumus: tanggal akhir periode − tanggal order terakhir."],["Frequency","","Jumlah order pelanggan dalam satu periode.\nRumus: hitung order per pelanggan per periode."],["Monetary","","Total nilai order pelanggan dalam satu periode.\nRumus: jumlah order_value per pelanggan per periode."],["revenue share","i","Porsi revenue yang disumbang satu segmen.\nRumus: revenue segmen ÷ total revenue.\nContoh: R$112.500 dari R$342.500 = 33%."],["silhouette score","i","Ukuran seberapa jelas pelanggan terpisah antar segmen, dari −1 sampai 1. Makin tinggi makin baik.\nRumus: rata-rata (b − a) ÷ max(a, b), dengan a = jarak rata-rata ke anggota segmen sendiri dan b = jarak rata-rata ke segmen terdekat."],["stabilitas segmen","i","Persentase pelanggan yang tetap di segmen yang sama pada periode berikutnya.\nRumus: pelanggan dengan segmen sama di dua periode ÷ pelanggan yang ada di kedua periode."],["churn risk","i","Persentase pelanggan yang berisiko berhenti belanja.\nRumus: pelanggan dengan recency di atas batas (misalnya 180 hari) ÷ total pelanggan aktif sebelumnya."],["uplift","i","Tambahan revenue jika perilaku pelanggan membaik.\nRumus: uplift per tahun = jumlah pelanggan × kenaikan frekuensi × rata-rata nilai order × 12.\nContoh: 4.000 × (0,05 × 10%) × R$150 × 12 = R$36.000."],["K-Means","","Algoritma yang mengelompokkan data ke sejumlah k kelompok berdasarkan kemiripan fitur."],["elbow method","i","Cara memilih jumlah segmen dengan melihat titik ketika penambahan segmen tidak lagi banyak memperbaiki kerapatan kelompok."],["elbow","i","Cara memilih jumlah segmen dengan melihat titik ketika penambahan segmen tidak lagi banyak memperbaiki kerapatan kelompok."],["Olist","","Marketplace di Brasil yang merilis data order 2016–2018 yang sudah dianonimkan sebagai dataset publik di Kaggle."],["boleto","i","Metode bayar populer di Brasil berupa slip tagihan yang dibayar di bank atau secara online."],["voucher","i","Kupon atau saldo potongan yang dipakai saat membayar order."],["cicilan","i","Pembayaran kartu kredit yang dibagi menjadi beberapa bulan (installments)."],["review score","i","Nilai ulasan 1–5 yang diberikan pelanggan setelah order diterima."],["cross-sell","i","Menawarkan produk dari kategori lain kepada pelanggan yang sudah ada."],["retensi","i","Upaya mempertahankan pelanggan agar tetap belanja."],["outlier","i","Data dengan nilai jauh dari kebanyakan data lain, misalnya pelanggan dengan belanja sangat besar."],["feature engineering","i","Membuat kolom baru dari data mentah agar perilaku pelanggan bisa diukur, misalnya porsi belanja malam hari."],["fitur perilaku","i","Ukuran yang dihitung dari transaksi, misalnya frekuensi atau porsi belanja per kategori, bukan tebakan identitas."],["StandardScaler","","Alat scikit-learn untuk menyamakan skala fitur agar tidak ada fitur yang terlalu dominan."],["scikit-learn","","Library Python untuk machine learning, termasuk K-Means."],["SQL","","Bahasa untuk meminta dan mengolah data dari tabel database."],["DuckDB","","Database ringan dalam satu file, untuk menjalankan SQL tanpa server."],["CTE","","Common Table Expression: query bantu yang diberi nama di dalam query SQL."],["window function","i","Fungsi SQL yang menghitung nilai dengan melihat baris lain, misalnya order sebelumnya milik pelanggan yang sama."],["KPI","","Key Performance Indicator: angka kunci untuk menilai sesuatu, misalnya revenue share."],["dashboard","i","Halaman ringkasan interaktif berisi grafik dan angka kunci."],["Streamlit","","Alat untuk membuat dashboard web memakai Python."],["Pareto","i","Pola ketika sebagian kecil pelanggan menyumbang sebagian besar revenue (aturan 80/20)."],["LLM","","Large Language Model: model AI yang membaca dan menulis teks. Di project lama dipakai untuk menebak demografi."],["heatmap","i","Grafik kotak berwarna untuk menunjukkan intensitas, misalnya jumlah transaksi per jam dan hari."],["hipotesis","i","Dugaan awal yang akan dibuktikan atau dibantah dengan data."],["README","","Dokumen penjelasan project yang dibaca pertama kali di repositori GitHub."]];
+
+const TERMS=G.map(([t,f,d])=>({t,d,re:new RegExp('(?<![\\w.-])'+t.replace(/[.*+?^${}()|[\]\\-]/g,'\\$&')+'(?![\\w-])',f)}));
+const SK='svg,.row,.fx,.fbar,.oh,.wb,table td:first-child,h1,h2,h3,nav,button,script,style,summary,.tm,.tag,.pri,.pill,.v,.l,.chip,.flow,th,#tip,.banner,.theme,.phase,.add,.tools b,b.t,code';
+function wrapT(n,seen){let b=null;for(const x of TERMS){if(seen.has(x.t))continue;const m=x.re.exec(n.data);if(m&&(!b||m.index<b.i||(m.index==b.i&&m[0].length>b.l)))b={x,i:m.index,l:m[0].length}}
+if(!b)return;seen.add(b.x.t);const r=n.splitText(b.i),a=r.splitText(b.l),s=document.createElement('span');s.className='tm';s.tabIndex=0;s.dataset.d=b.x.d;s.textContent=r.data;r.replaceWith(s);wrapT(a,seen)}
+function hl(root,seen){const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentElement.closest(SK)?3:1}),ns=[];while(w.nextNode())ns.push(w.currentNode);ns.forEach(n=>wrapT(n,seen))}
+const tip=document.createElement('div');tip.id='tip';tip.setAttribute('role','tooltip');document.body.appendChild(tip);
+function showT(e){tip.textContent=e.dataset.d;tip.style.display='block';const r=e.getBoundingClientRect(),w=tip.offsetWidth,h=tip.offsetHeight;tip.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left))+'px';tip.style.top=(r.bottom+h+12>innerHeight?r.top-h-6:r.bottom+6)+'px'}
+document.addEventListener('click',ev=>{const t=ev.target.closest('.tm');t?showT(t):tip.style.display='none'});
+document.addEventListener('mouseover',ev=>{const t=ev.target.closest('.tm');if(t)showT(t)});
+document.addEventListener('mouseout',ev=>{if(ev.target.closest&&ev.target.closest('.tm'))tip.style.display='none'});
+document.addEventListener('focusin',ev=>{const t=ev.target.closest&&ev.target.closest('.tm');if(t)showT(t)});
+addEventListener('scroll',()=>tip.style.display='none',{passive:true});
+const qg=$('qg');document.querySelector('.fbar').onclick=e=>{const b=e.target.closest('.fb');if(!b)return;const f=b.dataset.f;
+document.querySelectorAll('.fb').forEach(x=>x.classList.toggle('on',x==b));let th=null,vis=0;
+[...qg.children].forEach(el=>{if(el.classList.contains('theme')){if(th)th.hidden=!vis;th=el;vis=0}else{const show=f=='*'||el.dataset.p==f;el.hidden=!show;if(show)vis++}});if(th)th.hidden=!vis};
+let seen=new Set();[...document.querySelector('main').children].forEach(el=>{if(el.tagName=='H2')seen=new Set();hl(el,seen)});
+</script>
+</body></html>
