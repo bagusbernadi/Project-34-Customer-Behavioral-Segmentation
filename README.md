@@ -19,9 +19,9 @@ Halaman rancangan: https://bagusbernadi.github.io/Project-34-Customer-Behavioral
 Segmen pelanggan apa yang terbentuk dari perilaku belanja nyata (frekuensi, nilai order, kategori produk, waktu belanja, cara bayar), dan segmen mana yang paling bernilai atau berisiko berhenti belanja?
 
 ## 2. Data
-- Sumber data: [here](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Versi: nomor versi Kaggle dicatat saat diunduh; Tanggal akses: diisi saat diunduh)
+- Sumber data: [here](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Versi: 2, Tanggal akses: 28 Oktober 2026)
 - Acuan ide: [here](https://github.com/bagusbernadi/Customer-feature-and-Segmentation) (Versi: repo segmentasi lama, hanya ide dan kode; datanya tidak dipakai)
-- Ukuran (perkiraan, belum diverifikasi): ±100 ribu order 2016–2018 di 9 file CSV. Lisensi CC BY-NC-SA 4.0 (non-komersial).
+- Ukuran (perkiraan, belum diverifikasi): ±100 ribu order 2016–2018 di 9 file CSV. Lisensi CC BY-NC-SA 4.0 (non-komersial, dicek di halaman Kaggle 28 Oktober 2026). Atribusi: Olist, Francisco Magioli, Leo Dabague, dan Andre Sionek, "Brazilian E-Commerce Public Dataset by Olist" (Kaggle). Karya turunan wajib berlisensi sama (CC BY-NC-SA 4.0).
 - Tidak ada atribut demografi yang ditebak.
 
 ## 3. Analysis
